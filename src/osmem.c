@@ -9,11 +9,11 @@
 #define MMAP_THRESHOLD (128 * 1024)
 #define PAGE_SIZE 4096
 
-struct block_meta *head_list;  //  inceputul heap-ului
+struct block_meta *head_list;  // Beginning of the heap
 int numberCallBrk = -1;
 
-/* functie care gaseste cel mai mic multiplu de
- * 8 mai mare decat size-ul trimis
+/* Function that finds the smallest multiple of
+ * 8 greater than the sent size
  */
 size_t allignEightBytes(size_t size)
 {
@@ -30,11 +30,11 @@ size_t allignEightBytes(size_t size)
 	return Max;
 }
 
-// blocurile sunt puse intr-o lista dublu inlantuita
-/* inserarea la dreapta in lista a unui bloc nou,
- * tratand si cazul in care e primul bloc adaugat in lista,
- * precum si cazul in care blocul langa care inserez are un alt
- * bloc la dreapta
+// Blocks are put in a doubly linked list
+/* Insertion to the right in the list of a new block,
+ * also handling the case where it's the first block added to the list,
+ * as well as the case where the block next to which I insert has another
+ * block to the right
  */
 void insertRight(struct block_meta *insert_elem, struct block_meta *reference_elem)
 {
@@ -44,6 +44,7 @@ void insertRight(struct block_meta *insert_elem, struct block_meta *reference_el
 		head_list->prev = NULL;
 		return;
 	}
+	
 	if (reference_elem) {
 		insert_elem->next = reference_elem->next;
 		insert_elem->prev = reference_elem;
@@ -53,7 +54,7 @@ void insertRight(struct block_meta *insert_elem, struct block_meta *reference_el
 	}
 }
 
-// stergerea unui bloc din lista
+// Deletion of a block from the list
 void deleteFromList(struct block_meta *block)
 {
 	if (block == head_list && block)
@@ -64,8 +65,8 @@ void deleteFromList(struct block_meta *block)
 		block->next->prev = block->prev;
 }
 
-/* functie folosita la debugging pentru printarea
- * caracteristicilor unui bloc
+/* Function used for debugging to print
+ * the characteristics of a block
  */
 void printBlock(struct block_meta *block)
 {
@@ -74,15 +75,15 @@ void printBlock(struct block_meta *block)
 		block, block->size, block->status, block->prev, block->next);
 }
 
-/* functie folosita la debugging pentru printarea
- * listei de blocuri
+/* Function used for debugging to print
+ * the list of blocks
  */
 void printList(void)
 {
 	printf("Lista\n");
-/* retin capul de lista pentru ca e variabila globala
- * si altfel, se pierde
- */
+	/* I keep the list head because it's a global variable
+	 * and otherwise, it gets lost
+	 */
 	struct block_meta *block = head_list;
 
 	while (block) {
@@ -92,8 +93,8 @@ void printList(void)
 	printf("---------- Lista sfarsit ------\n");
 }
 
-/* functie care determina ultimul bloc din heap
- * (care a fost alocat cu brk inainte)
+/* Function that determines the last block in the heap
+ * (which was allocated with brk before)
  */
 struct block_meta *lastBlockInHeap(void)
 {
@@ -107,8 +108,8 @@ struct block_meta *lastBlockInHeap(void)
 	return lastBlock;
 }
 
-/* functie care extinde ultimul bloc liber din heap
- * modificand size-ul si statusul blocului
+/* Function that extends the last free block in the heap
+ * modifying the size and status of the block
  */
 struct block_meta *extendLastBlock(size_t size)
 {
@@ -126,8 +127,8 @@ struct block_meta *extendLastBlock(size_t size)
 	return NULL;
 }
 
-/* functie care face alocarea unui bloc cu sbrk si verifica
- *  daca aceasta a avut succes
+/* Function that allocates a block with sbrk and checks
+ * if this was successful
  */
 struct block_meta *allocSbrk(size_t size)
 {
@@ -139,8 +140,8 @@ struct block_meta *allocSbrk(size_t size)
 	return block;
 }
 
-/* functie care face alocarea unui bloc cu mmap si verifica daca
- * aceasta a avut succes
+/* Function that allocates a block with mmap and checks if
+ * this was successful
  */
 struct block_meta *allocMmap(size_t size)
 {
@@ -153,7 +154,7 @@ struct block_meta *allocMmap(size_t size)
 	return block;
 }
 
-// functie care parcurge lista in care sunt tinute blocurile pana la ultimul bloc
+// Function that traverses the list where blocks are kept until the last block
 struct block_meta *parseForAnyTypeOfAlloc(void)
 {
 	struct block_meta *pointer = head_list;
@@ -163,9 +164,9 @@ struct block_meta *parseForAnyTypeOfAlloc(void)
 	return pointer;
 }
 
-/* functie care creeaza un bloc cu sbrk sau mmap,
- * updateaza caracteristicile acestuia
- * si il insereaza in lista de blocuri
+/* Function that creates a block with sbrk or mmap,
+ * updates its characteristics
+ * and inserts it in the block list
  */
 struct block_meta *createBlockMalloc(size_t size)
 {
@@ -181,6 +182,7 @@ struct block_meta *createBlockMalloc(size_t size)
 		insertRight(blockSbrk, getBlock);
 		return blockSbrk;
 	}
+	
 	struct block_meta *blockMmap = allocMmap(size);
 
 	blockMmap->status = STATUS_MAPPED;
@@ -193,20 +195,20 @@ struct block_meta *createBlockMalloc(size_t size)
 	return blockMmap;
 }
 
-// functie care returneaza pointerul payload-ului asociat unor metadate
+// Function that returns the payload pointer associated with metadata
 void *getBlockPointer(struct block_meta *block)
 {
 	return (char *)block + 32;
 }
 
-// functie care returneaza pointerul metadatelor asociat unui payload
+// Function that returns the metadata pointer associated with a payload
 struct block_meta *getPointerBlock(void *ptr)
 {
 	return (struct block_meta *)((char *)ptr - 32);
 }
 
-/* functie care gaseste blocul liber cel mai potrivit din lista pentru
- *  acoperirea unui bloc de o anumita dimensiune
+/* Function that finds the most suitable free block from the list for
+ * covering a block of a certain size
  */
 struct block_meta *findBestBlock(size_t size)
 {
@@ -225,8 +227,8 @@ struct block_meta *findBestBlock(size_t size)
 	return block_return;
 }
 
-/* functie de lipire a unui bloc cu un cel din dreapta lui si
- * stergerea celui suplimentar
+/* Function to merge a block with the one to its right and
+ * delete the extra one
  */
 void doCaseNextCoalesceBlock(struct block_meta *block)
 {
@@ -234,8 +236,8 @@ void doCaseNextCoalesceBlock(struct block_meta *block)
 	deleteFromList(block->next);
 }
 
-/* functie de lipire a unui bloc cu un cel din stanga lui si
- * stergerea celui suplimentar
+/* Function to merge a block with the one to its left and
+ * delete the extra one
  */
 void doCasePrevCoalesceBlock(struct block_meta *block)
 {
@@ -243,7 +245,7 @@ void doCasePrevCoalesceBlock(struct block_meta *block)
 	deleteFromList(block);
 }
 
-// functie de lipire care trateaza cele doua cazuri de mai sus
+// Merge function that handles the two cases above
 void coalesceBlock(struct block_meta *block)
 {
 	if (block) {
@@ -254,17 +256,17 @@ void coalesceBlock(struct block_meta *block)
 	}
 }
 
-/* functie care imparte un bloc in doua doar daca dimensiunea
- * permite acest lucru
+/* Function that splits a block in two only if the size
+ * allows this
  */
 struct block_meta *splitBlock(struct block_meta *block, size_t size)
 {
 	block->status = STATUS_ALLOC;
 	size_t remainSize = block->size - size - allignEightBytes(sizeof(struct block_meta));
 
-	// pentru ca am unsigned, deci doar numere pozitive, iar altfel, pentru valori negative va face ceva gresit
+	// Because we have unsigned, so only positive numbers, otherwise for negative values it will do something wrong
 	if (size < block->size && block->size - size >= 8 + allignEightBytes(sizeof(struct block_meta))) {
-	 //  daca mai este suficienta memorie pentru crearea unui bloc de cel putin dimensiunea minima
+		// If there is still enough memory to create a block of at least minimum size
 		block->size = size;
 		char *ptr = (char *)block + size + allignEightBytes(sizeof(struct block_meta));
 		struct block_meta *another_block = (struct block_meta *)ptr;
@@ -277,7 +279,7 @@ struct block_meta *splitBlock(struct block_meta *block, size_t size)
 	return block;
 }
 
-// functie care prealoca heap-ul pentru prima data cand se executa brk
+// Function that preallocates the heap for the first time when brk is executed
 void preallocateHeap(size_t size)
 {
 	struct block_meta *block = createBlockMalloc(size - allignEightBytes(sizeof(struct block_meta)));
@@ -285,14 +287,14 @@ void preallocateHeap(size_t size)
 	block->status = STATUS_FREE;
 }
 
-//  cazul de prealocare heap din malloc
+// Case of heap preallocation from malloc
 void casePreallocateHeapMalloc(void)
 {
 	preallocateHeap(MMAP_THRESHOLD);
 	numberCallBrk = 0;
 }
 
-//  cazul de split din malloc
+// Case of split from malloc
 void *caseSplitBlock(struct block_meta *block, size_t size)
 {
 	struct block_meta *splitedBlock = splitBlock(block, size);
@@ -300,7 +302,7 @@ void *caseSplitBlock(struct block_meta *block, size_t size)
 	return getBlockPointer(splitedBlock);
 }
 
-//  cazul de extindere si creare bloc nou malloc
+// Case of extend and create new block malloc
 void *caseExtendAndCreate(size_t size)
 {
 	struct block_meta *lastBlock = extendLastBlock(size);
@@ -312,52 +314,52 @@ void *caseExtendAndCreate(size_t size)
 	return getBlockPointer(createdBlock);
 }
 
-//  malloc = alocare memoriei, fara initializarea memoriei
+// malloc = memory allocation, without memory initialization
 void *os_malloc(size_t size)
 {
-	if (size == 0) // nu am ce aloca
+	if (size == 0) // Nothing to allocate
 		return NULL;
-	// daca este prima oara cand trebuie facut brk => se prealoca heap-ul
+	// If it's the first time brk needs to be done => the heap is preallocated
 	if (size < MMAP_THRESHOLD && numberCallBrk == -1)
 		casePreallocateHeapMalloc();
 
 	struct block_meta *block = findBestBlock(allignEightBytes(size));
-	/* daca am gasit un bloc liber (care a fost deja alocat, dar eliberat)
-	 * de dimensiune suficienta cat sa acopere dimensiunea ceruta => split
+	/* If I found a free block (which was already allocated, but freed)
+	 * of sufficient size to cover the requested size => split
 	 */
 	if (block != NULL)
 		return caseSplitBlock(block, allignEightBytes(size));
-	/* daca pot sa extind ultimul bloc => extindere, altfel creez unul nou
+	/* If I can extend the last block => extension, otherwise I create a new one
 	 */
 	return caseExtendAndCreate(allignEightBytes(size));
 }
 
-//  functia free = eliberarea memoriei alocate
+// The free function = freeing allocated memory
 void os_free(void *ptr)
 {
 	if (ptr == NULL)
 		return;
 	struct block_meta *pointerBlock = getPointerBlock(ptr);
-	/* pe heap nu se poate dezaloca memorie pentru ca heap-ul e zona de memorie continua
-	 * => marchez blocul ca free si se incearca lipirea acestuia la o zona goala
+	/* On the heap you cannot deallocate memory because the heap is a continuous memory area
+	 * => I mark the block as free and try to merge it with an empty area
 	 */
 	if (pointerBlock && pointerBlock->status == STATUS_ALLOC) {
 		pointerBlock->status = STATUS_FREE;
 		coalesceBlock(pointerBlock);
 	} else {
-		/* daca zona a fost alocata cu mmap => o sterg din lista si ii dezaloc continutul
+		/* If the area was allocated with mmap => I delete it from the list and deallocate its content
 		 */
 		if (pointerBlock && pointerBlock->status == STATUS_MAPPED) {
 			deleteFromList(pointerBlock);
 			munmap(pointerBlock, pointerBlock->size + allignEightBytes(sizeof(struct block_meta)));
 		} else {
-			return; //  daca statusul e free => nu trebuie sa mai faca nimic
+			return; // If the status is free => nothing more needs to be done
 		}
 	}
 }
 
-/* crearea unui bloc: alocarea acestuia cu brk sau mmap,
- * modificarea atributelor si inserarea lui in lista de blocuri
+/* Creating a block: allocating it with brk or mmap,
+ * modifying attributes and inserting it in the block list
  */
 struct block_meta *createBlockCalloc(size_t size)
 {
@@ -373,6 +375,7 @@ struct block_meta *createBlockCalloc(size_t size)
 		insertRight(blockSbrk, getBlock);
 		return blockSbrk;
 	}
+	
 	struct block_meta *blockMmap = allocMmap(size);
 
 	blockMmap->status = STATUS_MAPPED;
@@ -385,14 +388,14 @@ struct block_meta *createBlockCalloc(size_t size)
 	return blockMmap;
 }
 
-//  caz prealocare heap la calloc
+// Case heap preallocation in calloc
 void casePreallocateHeapCalloc(void)
 {
 	preallocateHeap(MMAP_THRESHOLD);
 	numberCallBrk = 0;
 }
 
-//  caz creare bloc nou la calloc
+// Case create new block in calloc
 void *caseCreateBlockCalloc(size_t size)
 {
 	struct block_meta *block = createBlockCalloc(size);
@@ -400,7 +403,7 @@ void *caseCreateBlockCalloc(size_t size)
 	return getBlockPointer(block);
 }
 
-//  caz split bloc la calloc
+// Case split block in calloc
 void *caseSplitBlockCalloc(struct block_meta *block, size_t size)
 {
 	struct block_meta *splitedBlock = splitBlock(block, size);
@@ -408,7 +411,7 @@ void *caseSplitBlockCalloc(struct block_meta *block, size_t size)
 	return getBlockPointer(splitedBlock);
 }
 
-// caz extindere/ creare bloc calloc
+// Case extend/create block calloc
 void *caseExtendAndCreateCalloc(size_t size)
 {
 	struct block_meta *lastBlock = extendLastBlock(size);
@@ -420,31 +423,31 @@ void *caseExtendAndCreateCalloc(size_t size)
 	return getBlockPointer(createdBlock);
 }
 
-/* alloc mai intai memorie pentru calloc, asemanator ca la malloc,
- * dar aici dimensiunea este nmemb * size
+/* Allocate memory for calloc first, similar to malloc,
+ * but here the size is nmemb * size
  */
 void *osCallocReserveMemory(size_t nmemb, size_t sizee)
 {
 	if (sizee * nmemb == 0)
-		return NULL; // nu am ce sa aloc
+		return NULL; // Nothing to allocate
 	size_t size = allignEightBytes(sizee * nmemb);
 
-	// primul apel de brk
+	// First brk call
 	if (size + allignEightBytes(sizeof(struct block_meta)) < PAGE_SIZE && numberCallBrk == -1)
 		casePreallocateHeapCalloc();
-	// se creeaza un nou bloc de memorie cu sbrk sau mmap
+	// A new memory block is created with sbrk or mmap
 	if (size + allignEightBytes(sizeof(struct block_meta)) > PAGE_SIZE)
 		return caseCreateBlockCalloc(size);
 	struct block_meta *block = findBestBlock(size);
 
-	// daca pot sa fac split, altfel extind/ creez alt bloc
+	// If I can split, otherwise extend/create another block
 	if (block != NULL)
 		return caseSplitBlock(block, size);
 	return caseExtendAndCreateCalloc(size);
 }
 
-/* dupa alocarea memoriei initializeaza toata memoria prin setarea
- * fiecarui bit la 0
+/* After memory allocation initializes all memory by setting
+ * each bit to 0
  */
 void *os_calloc(size_t nmemb, size_t size)
 {
@@ -459,11 +462,11 @@ void *os_calloc(size_t nmemb, size_t size)
 	return memAdress;
 }
 
-/* realloc poate sa extinda sau sa micsoreze un bloc de memorie
- * in functie de size-ul acestuia si de spatiul de langa el
+/* realloc can extend or shrink a memory block
+ * depending on its size and the space next to it
  */
 
-/* se va incerca micsorarea blocului curent in fct de size
+/* Will attempt to shrink the current block according to size
  */
 void *truncateBlock(struct block_meta *block, size_t size)
 {
@@ -472,8 +475,8 @@ void *truncateBlock(struct block_meta *block, size_t size)
 	return getBlockPointer(blockResulted);
 }
 
-/* functie care lipeste doua blocuri din memorie pentru
- * realloc si il sterge pe cel suplimentar
+/* Function that merges two memory blocks for
+ * realloc and deletes the extra one
  */
 void coalesceBlockRealloc(struct block_meta *block)
 {
@@ -483,12 +486,12 @@ void coalesceBlockRealloc(struct block_meta *block)
 	}
 }
 
-/* se va incerca extinderea unui bloc daca la dreapta acestuia
- * exista suficient loc
+/* Will attempt to extend a block if to the right of it
+ * there is enough space
  */
 
-/* functie pentru realloc care mareste dimensiunea unui bloc de memorie daca:
- * exista bloc liber in dreapta sau daca blocul e ultimul bloc din heap
+/* Function for realloc that increases the size of a memory block if:
+ * there is a free block to the right or if the block is the last block in the heap
  */
 struct block_meta *expandBlock(struct block_meta *block, size_t size)
 {
@@ -499,6 +502,7 @@ struct block_meta *expandBlock(struct block_meta *block, size_t size)
 		extendLastBlock(size);
 		return lastBlock;
 	}
+	
 	if (block->next && block->next->status == STATUS_FREE &&
 	(block->next->size + allignEightBytes(sizeof(struct block_meta))) >= size - block->size) {
 		struct block_meta *splitedBlock = splitBlock(block->next, size - block->size);
@@ -509,8 +513,8 @@ struct block_meta *expandBlock(struct block_meta *block, size_t size)
 	return NULL;
 }
 
-/* bloc alocat cu size-ul > MMAP_THRESOLD => trebuie realocat cu mmap si scapat
- * de blocul anterior
+/* Block allocated with size > MMAP_THRESHOLD => must be reallocated with mmap and get rid
+ * of the previous block
  */
 void *reallocMappedBlock(void *ptr, size_t size, struct block_meta *oldBlock)
 {
@@ -524,9 +528,9 @@ void *reallocMappedBlock(void *ptr, size_t size, struct block_meta *oldBlock)
 	return newBlock;
 }
 
-/* daca nu sunt in niciun caz specific => aloc memorie si copiez
- * continutul blocului vechi, eliberand la final pointer-ul vechi pentru ca nu mai
- *  am nevoie el
+/* If I'm not in any specific case => I allocate memory and copy
+ * the content of the old block, finally freeing the old pointer because I no longer
+ * need it
  */
 void *noSpecificCaseRealloc(size_t size, void *ptr, struct block_meta *oldBlock)
 {
@@ -537,20 +541,21 @@ void *noSpecificCaseRealloc(size_t size, void *ptr, struct block_meta *oldBlock)
 	return newBlock;
 }
 
-/* functia de realloc care trateaza toate cazurile posibile si
- * apeleaza functiile corespunzatoare
+/* The realloc function that handles all possible cases and
+ * calls the corresponding functions
  */
 void *os_realloc(void *ptr, size_t size)
 {
 	if (ptr == NULL)
 		return os_malloc(allignEightBytes(size));
-	if (size == 0) { // dim = 0 => bloc curent eliberat (nu contine ceva)
+	if (size == 0) { // size = 0 => current block freed (doesn't contain anything)
 		os_free(ptr);
 		return NULL;
 	}
+	
 	struct block_meta *oldBlock = (struct block_meta *)((char *)ptr - 32);
 
-	if (oldBlock->status == STATUS_FREE) // nu mai am acces la blocul acesta (e deja free)
+	if (oldBlock->status == STATUS_FREE) // I no longer have access to this block (it's already free)
 		return NULL;
 	if (allignEightBytes(size) > MMAP_THRESHOLD || oldBlock->status == STATUS_MAPPED)
 		return reallocMappedBlock(ptr, allignEightBytes(size), oldBlock);
